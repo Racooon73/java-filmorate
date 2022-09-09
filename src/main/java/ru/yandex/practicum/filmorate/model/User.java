@@ -11,13 +11,12 @@ import java.time.LocalDate;
 @Data
 public class User {
     @NotNull
-    int id;
+    private int id;
     @Email
-    String email;
+    private String email;
     @NotBlank
-    String login;
-    @NotBlank
-    String name;
+    private String login;
+    private String name;
     @Past
-    LocalDate birthday;
+    private LocalDate birthday;
 }
