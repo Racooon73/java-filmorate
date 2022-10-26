@@ -2,13 +2,17 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dao.FilmDao;
+import ru.yandex.practicum.filmorate.dao.UserDao;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import java.sql.Date;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -17,27 +21,29 @@ import java.util.*;
 @Slf4j
 public class FilmService {
     private final FilmStorage storage;
-    private final UserStorage userStorage;
+    private final FilmDao filmDao;
+    private final UserDao userDao;
     private static final LocalDate MIN_DATE = LocalDate.of(1895, 12, 28);
     @Autowired
-    public FilmService(FilmStorage storage, UserStorage userStorage) {
+    public FilmService(@Qualifier("DbFilmStorage") FilmStorage storage, FilmDao filmDao, UserDao userDao) {
         this.storage = storage;
-        this.userStorage = userStorage;
+        this.filmDao = filmDao;
+        this.userDao = userDao;
     }
     void validation(Film film) throws ValidationException {
-        if(film.getReleaseDate().isBefore(MIN_DATE)){
+        if(film.getReleaseDate().before(Date.valueOf(MIN_DATE))){
             log.error("Дата релиза фильма не может быть раньше 28 декабря 1895 года");
             throw new ValidationException();
         }
 
     }
-    public Film addFilm(Film film) throws ValidationException {
+    public Film addFilm(Film film) throws ValidationException, NotFoundException {
         validation(film);
         return storage.addFilm(film);
     }
     public Film updateFilm(Film film) throws NotFoundException, ValidationException {
         validation(film);
-        if(!storage.getFilms().containsKey(film.getId())){
+        if(filmDao.getFilmById(film.getId()).isEmpty()){
             throw new NotFoundException();
         }
         return storage.updateFilm(film);
@@ -46,41 +52,42 @@ public class FilmService {
         return new ArrayList<>(storage.getFilms().values());
     }
     public Film getFilm(int id) throws NotFoundException {
-        if(!storage.getFilms().containsKey(id)){
+        if(filmDao.getFilmById(id).isEmpty()){
             throw new NotFoundException();
         }
-        return storage.getFilms().get(id);
+        if(filmDao.getFilmById(id).isPresent()){
+        return filmDao.getFilmById(id).get();
+        }else{
+            throw new NotFoundException();
+        }
 
     }
     public void addLike(Integer id, Integer userId) throws NotFoundException {
-        if(!storage.getFilms().containsKey(id) || !userStorage.getUsers().containsKey(userId)){
+        if(filmDao.getFilmById(id).isEmpty() || userDao.getUserById(userId).isEmpty()){
             throw new NotFoundException();
         }
-        storage.getFilms().get(id).getLikes().add(userId);
+        filmDao.addLike(id,userId);
     }
 
     public void deleteLike(Integer id, Integer userId) throws NotFoundException {
-        if(!storage.getFilms().containsKey(id) || !userStorage.getUsers().containsKey(userId)){
+        if(filmDao.getFilmById(id).isEmpty() || userDao.getUserById(userId).isEmpty()){
             throw new NotFoundException();
         }
-        storage.getFilms().get(id).getLikes().remove(userId);
+        filmDao.deleteLike(id,userId);
 
     }
 
     public List<Film> getPopularFilms(int count) {
-        List<Film> popFilms = new ArrayList<>(storage.getFilms().values());
-        popFilms.sort((lhs, rhs) -> rhs.getLikes().size() - lhs.getLikes().size());
-        List<Film> ans = new ArrayList<>();
-        if(storage.getFilms().size() < count){
-            count = storage.getFilms().size();
+        List<Film> all = new ArrayList<>();
+        List<Film> pop = filmDao.getPopularFilms(count);
+        if(pop.size() == 0){
+            pop = getFilms();
+            for (int i = 0; i < count && i < pop.size(); i++) {
+             all.add(pop.get(i));
+            }
+            return all;
         }
-        for (int i = 0; i < count; i++) {
-            ans.add(popFilms.get(i));
-        }
+        return pop;
+    }
 
-        return ans;
-    }
-    public FilmStorage getStorage(){
-        return storage;
-    }
 }

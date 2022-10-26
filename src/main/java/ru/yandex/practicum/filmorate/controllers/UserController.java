@@ -24,7 +24,7 @@ public class UserController {
     }
 
     @PostMapping("/users")
-    public User addUser(@Valid @RequestBody User user){
+    public User addUser(@Valid @RequestBody User user) throws NotFoundException {
         log.info("Получен запрос POST /users.");
         return userService.addUser(user);
     }
@@ -58,12 +58,12 @@ public class UserController {
         log.info(id + " больше не друг " + friendId);
     }
     @GetMapping("/users/{id}/friends")
-    public Set<User> getUserFriends(@PathVariable int id) throws NotFoundException {
+    public List<User> getUserFriends(@PathVariable int id) throws NotFoundException {
         log.info("Получен запрос GET /users/"+id+"/friends");
         return userService.getFriends(id);
     }
     @GetMapping("/users/{id}/friends/common/{otherId}")
-    public Set<User> getUserFriends(@PathVariable int id, @PathVariable int otherId) throws NotFoundException {
+    public List<User> getUserFriends(@PathVariable int id, @PathVariable int otherId) throws NotFoundException {
         log.info("Получен запрос GET /users/"+id+"/friends/common"+otherId);
         return userService.getMutualFriends(id,otherId);
     }
