@@ -55,7 +55,7 @@ public class Film {
         values.put("description", this.description);
         values.put("release_date",this.releaseDate);
         values.put("duration", this.duration);
-        values.put("rating_id", this.mpa.id);
+        values.put("rating_id", this.mpa.getId());
         return values;
 
     }
