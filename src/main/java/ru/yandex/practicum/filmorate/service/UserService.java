@@ -1,30 +1,32 @@
 package ru.yandex.practicum.filmorate.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
+import ru.yandex.practicum.filmorate.dao.UserDao;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class UserService {
     private final UserStorage storage;
+    private final UserDao userDao;
+
     @Autowired
-    public UserService(UserStorage storage){
+    public UserService(@Qualifier("DbUserStorage") UserStorage storage, UserDao userDao){
         this.storage = storage;
 
+        this.userDao = userDao;
     }
-    public User addUser(User user){
+    public User addUser(User user) throws NotFoundException {
         return storage.addUser(user);
     }
     public User updateUser(User user) throws NotFoundException {
-        if(!storage.getUsers().containsKey(user.getId())){
+        if(userDao.getUserById(user.getId()).isEmpty()){
             throw new NotFoundException();
         }
         return storage.updateUser(user);
@@ -33,56 +35,39 @@ public class UserService {
       return new ArrayList<>(storage.getUsers().values());
     }
     public User getUser(int id) throws NotFoundException {
-        if(!storage.getUsers().containsKey(id)){
+        if(userDao.getUserById(id).isEmpty()){
             throw new NotFoundException();
         }
-        return storage.getUsers().get(id);
+        return userDao.getUserById(id).get();
     }
     public void addFriend(Integer id, Integer friendId) throws NotFoundException {
-        if(!storage.getUsers().containsKey(id) || !storage.getUsers().containsKey(friendId)){
+        if(userDao.getUserById(id).isEmpty() || userDao.getUserById(friendId).isEmpty()){
             throw new NotFoundException();
         }
-        storage.getUsers().get(id).getFriends().add(friendId);
-        storage.getUsers().get(friendId).getFriends().add(id);
+        userDao.addFriend(id,friendId);
     }
     public void deleteFriend(Integer id, Integer friendId) throws NotFoundException {
-        if(!storage.getUsers().containsKey(id) || !storage.getUsers().containsKey(friendId)){
+        if(userDao.getUserById(id).isEmpty() || userDao.getUserById(friendId).isEmpty()){
             throw new NotFoundException();
         }
-        storage.getUsers().get(id).getFriends().remove(friendId);
-        storage.getUsers().get(friendId).getFriends().remove(id);
+        userDao.deleteFriend(id,friendId);
 
     }
-    public Set<User> getFriends(Integer id) throws NotFoundException {
-        if(!storage.getUsers().containsKey(id)){
+    public List<User> getFriends(Integer id) throws NotFoundException {
+        if(userDao.getUserById(id).isEmpty()){
             throw new NotFoundException();
         }
-        Set<User> friends = new HashSet<>();
-        for (Integer friend : storage.getUsers().get(id).getFriends()) {
-            friends.add(storage.getUsers().get(friend));
-        }
-        return friends;
+        return userDao.getFriends(id);
     }
-    public Set<User> getMutualFriends(Integer id, Integer otherId) throws NotFoundException {
+    public List<User> getMutualFriends(Integer id, Integer otherId) throws NotFoundException {
 
-        if(!storage.getUsers().containsKey(id) || !storage.getUsers().containsKey(otherId)){
+        if(userDao.getUserById(id).isEmpty() || userDao.getUserById(otherId).isEmpty()){
             throw new NotFoundException();
         }
-        Set<User> mutual = new HashSet<>();
-        Set<Integer> firstUserFriends = storage.getUsers().get(id).getFriends();
-        Set<Integer> secondUserFriends = storage.getUsers().get(otherId).getFriends();
 
-        for (Integer firstUserFriend : firstUserFriends) {
-            if (secondUserFriends.contains(firstUserFriend)) {
-                mutual.add(storage.getUsers().get(firstUserFriend));
-            }
-        }
-        return mutual;
+        return userDao.getCommonFriends(id,otherId);
 
 
-    }
-    public UserStorage getStorage(){
-        return storage;
     }
 
 }

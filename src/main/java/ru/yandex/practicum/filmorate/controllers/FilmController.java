@@ -15,10 +15,7 @@ import java.util.*;
 @RestController
 public class FilmController {
 
-
     private final FilmService filmService;
-
-
 
     @Autowired
     public FilmController(FilmService filmService) {
@@ -27,7 +24,7 @@ public class FilmController {
     }
 
     @PostMapping("/films")
-    public Film addFilm(@Valid @RequestBody Film film) throws ValidationException {
+    public Film addFilm(@Valid @RequestBody Film film) throws ValidationException, NotFoundException {
         log.info("Получен запрос POST /films.");
         return filmService.addFilm(film);
 
