@@ -1,5 +1,5 @@
 # java-filmorate
-Template repository for Filmorate project.
+DB schema 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/Racooon73/java-filmorate/blob/main/filmorateDB.png">
   <source media="(prefers-color-scheme: light)" srcset="https://github.com/Racooon73/java-filmorate/blob/main/filmorateDB.png">
